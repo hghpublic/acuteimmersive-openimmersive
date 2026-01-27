@@ -11,8 +11,8 @@ import OpenImmersive
 enum ProjectionOption: String {
     /// The projection to use for VR180/VR360 videos.
     case equirectangular = "Equirectangular"
-    /// The projection to use for Spatial videos.
-    case spatial = "Spatial"
+    /// The projection to use for Spatial videos and other rectangular videos.
+    case rectilinear = "Rectilinear"
     /// The projection to use for Apple Immersive videos (AIVU).
     case appleImmersive = "AIVU"
 }
@@ -27,6 +27,8 @@ class OpenImmersiveAppState {
     var fieldOfView: Int = 180
     /// Whether to force the user-selected field of view even when the MV-HEVC media encodes a field of view.
     var forceFov: Bool = false
+    /// The user-selected frame packing type.
+    var framePacking: VideoItem.FramePacking = .none
     /// Whether to show the timecode readout view in the ImmersivePlayer.
     var showTimecodeReadout: Bool = false
     
@@ -38,10 +40,13 @@ class OpenImmersiveAppState {
         switch projection {
         case .equirectangular:
             item.projection = .equirectangular(fieldOfView: Float(self.fieldOfView), force: self.forceFov)
-        case .spatial:
+            item.framePacking = framePacking
+        case .rectilinear:
             item.projection = .rectangular
+            item.framePacking = framePacking
         case .appleImmersive:
             item.projection = .appleImmersive
+            item.framePacking = .none
         }
         return item
     }
@@ -56,10 +61,13 @@ class OpenImmersiveAppState {
                 self.projection = .equirectangular
                 self.fieldOfView = Int(fieldOfView)
                 self.forceFov = force
+                self.framePacking = item.framePacking
             case .rectangular:
-                self.projection = .spatial
+                self.projection = .rectilinear
+                self.framePacking = item.framePacking
             case .appleImmersive:
                 self.projection = .appleImmersive
+                self.framePacking = .none
             }
         }
     }
@@ -79,7 +87,9 @@ struct OpenImmersiveApp: App {
                 appState.applyFormatOptions(from: item)
                 appState.selectedItem = item
             }
+            .frame(width: 800, height: 850)
         }
+        .windowResizability(.contentSize)
         .defaultSize(width: 800, height: 850)
         .environment(appState)
         

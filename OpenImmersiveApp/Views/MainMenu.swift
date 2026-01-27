@@ -30,7 +30,7 @@ struct MainMenu: View {
             
             Spacer()
             
-            Text("OpenImmersive \(version) \nMaintained by [Anthony Maës](https://www.linkedin.com/in/portemantho/) & [Acute Immersive 🐶](https://www.acuteimmersive.com/)\nDerived from [Spatial Player](https://github.com/mikeswanson/SpatialPlayer/) by [Mike Swanson](https://blog.mikeswanson.com/)")
+            Text("OpenImmersive \(version) \nMaintained by [Anthony Maës](https://www.linkedin.com/in/portemantho/) & [Acute Immersive 🐶](https://www.acuteimmersive.com/)")
                 .contentShape(.rect)
                 .padding(.horizontal, 40)
                 .padding(.vertical)

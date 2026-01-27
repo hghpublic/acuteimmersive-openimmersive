@@ -16,8 +16,6 @@ struct SourcesList: View {
     
     /// The visibility of a panel with advanced format options
     @State private var areOptionsShowing: Bool = false
-    /// The visibility of a tooltip with more information about MV-HEVC encoding.
-    @State private var isTooltipShowing: Bool = false
     
     var body: some View {
         @Bindable var appState = appState
@@ -32,16 +30,17 @@ struct SourcesList: View {
             }
             
             let videoTitle = selectedItem.metadata[.commonIdentifierTitle] ?? "<NONE>"
-            let fieldOfView = appState.projection == .equirectangular ? "\(appState.fieldOfView)°" : ""
+            let fieldOfView = appState.projection == .equirectangular ? " \(appState.fieldOfView)°" : ""
+            let framePacking = appState.projection == .appleImmersive || appState.framePacking == .none ? "" : "(\(appState.framePacking.description))"
             
             Text("Selected video: **\(videoTitle)**")
-            Text("Projection: **\(appState.projection.rawValue) \(fieldOfView)**")
+            Text("Format: **\(appState.projection.rawValue)\(fieldOfView)** \(framePacking)")
             
             Divider()
                 .padding(.vertical)
             
             HStack {
-                SpatialVideoPicker() { item in
+                GalleryVideoPicker(spatialVideosOnly: false) { item in
                     appState.applyFormatOptions(from: item)
                     appState.selectedItem = item
                 }
@@ -64,34 +63,56 @@ struct SourcesList: View {
             }
             .popover(isPresented: $areOptionsShowing) {
                 VStack {
-                    ProjectionPicker(projection: $appState.projection, options: [.equirectangular, .spatial, .appleImmersive])
+                    Text("Projection")
+                        .font(.headline.lowercaseSmallCaps())
+                    ProjectionPicker(projection: $appState.projection, options: [.equirectangular, .rectilinear, .appleImmersive])
                     
-                    switch appState.projection {
-                    case .equirectangular:
-                        Text("The video will be projected onto a sphere with the following viewing angle, unless a different value is encoded in the file:")
-                            .fixedSize(horizontal: false, vertical: true)
-                            .multilineTextAlignment(.center)
-                            .padding(.bottom)
+                    let projectionDescription = switch appState.projection {
+                    case .equirectangular: "The video will be projected onto a spherical screen.\nUse this setting for VR180 and VR360."
+                    case .rectilinear: "The video will be played on a rectangular plane.\nUse this setting for Spatial Video and other rectilinear videos."
+                    case .appleImmersive: "Use this setting for Apple Immersive Video only."
+                    }
+                    Text(projectionDescription)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .multilineTextAlignment(.center)
+                    
+                    if appState.projection == .equirectangular {
+                        Divider()
+                            .padding(.vertical, 10)
                         
+                        Text("Horizontal Field of View")
+                            .font(.headline.lowercaseSmallCaps())
                         FormatPicker(fieldOfView: $appState.fieldOfView, options: [65, 144, 180, 360])
+                                .padding(.top, 5)
                         
                         Toggle(isOn: $appState.forceFov.animation(.easeInOut)) {
-                            Text("Override encoded angle")
+                            Text("Override encoded values")
                         }
                         .fixedSize()
-                    case .spatial:
-                        Text("The video will render on a rectangular plane. Use this for Spatial Video.")
-                        .fixedSize(horizontal: false, vertical: true)
-                        .multilineTextAlignment(.center)
-                    case .appleImmersive:
-                        Text("The video will render with the native player for Apple Immersive Videos.\nAIVU files created from half-equirectangular videos in the Apple Immersive Video Utility should use the Equirectangular projection.")
-                        .fixedSize(horizontal: false, vertical: true)
-                        .multilineTextAlignment(.center)
+                    }
+                    
+                    if appState.projection != .appleImmersive {
+                        Divider()
+                            .padding(.vertical, 10)
+                        
+                        Text("Frame Packing")
+                            .font(.headline.lowercaseSmallCaps())
+                        FramePackingPicker(framePacking: $appState.framePacking, options: [.none, .sideBySide, .overUnder])
+                        let packingDescription = switch appState.framePacking {
+                        case .none: "Use this setting for Spatial, MV-HEVC, APMP and Mono videos."
+                        case .sideBySide: "Use this setting for side-by-side videos (e.g. legacy 3D VR180)."
+                        case .overUnder: "Use this setting for over-under videos (e.g. legacy 3D VR360)."
+                        }
+                        Text(packingDescription)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .multilineTextAlignment(.center)
                     }
                     
                     Divider()
                         .padding(.vertical, 10)
                     
+                    Text("Widgets")
+                        .font(.headline.lowercaseSmallCaps())
                     Toggle(isOn: $appState.showTimecodeReadout.animation(.easeInOut)) {
                         Text("Show timecode readout")
                     }
@@ -101,21 +122,11 @@ struct SourcesList: View {
                 .padding()
             }
             
-            Text("This player only supports immersive and spatial videos in the MV-HEVC format. \(Image(systemName: "info.bubble\(isTooltipShowing ? "" : ".fill")"))")
+            Text("\(Image(systemName: "info.circle")) This player supports Spatial Video, AIV Immersive Videos, MV-HEVC, side-by-side and over-under.\nUse the gear button to select the correct format and projection.")
                 .font(.callout)
+                .fixedSize(horizontal: false, vertical: true)
+                .multilineTextAlignment(.center)
                 .padding()
-                .contentShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
-                .hoverEffect()
-                .onTapGesture {
-                    isTooltipShowing.toggle()
-                }
-                .popover(isPresented: $isTooltipShowing) {
-                    Text("To convert side-by-side and over-under videos to MV-HEVC, use a tool like Andrew Hazelden's [Spatial Metadata app](https://github.com/Kartaverse/Spatial-Metadata) or Mike Swanson's [Spatial command line interface](https://blog.mikeswanson.com/spatial/).\n\nTo further convert 180 degree MV-HEVC videos to AIVU, use the [Apple Immersive Video Utility](https://support.apple.com/guide/immersive-video-utility/welcome/web) and select \"HEQU\" when prompted for an AIME file.")
-                        .multilineTextAlignment(.center)
-                        .contentShape(.rect)
-                        .frame(minHeight: 120)
-                        .padding(15)
-                }
         }
     }
     
@@ -174,15 +185,46 @@ struct FormatPicker: View {
     }
 }
 
+extension VideoItem.FramePacking {
+    var description: String {
+        switch self {
+        case .none: "Default"
+        case .sideBySide: "Side-by-Side"
+        case .overUnder: "Over-Under"
+        }
+    }
+}
+
+/// A frame packing type picker
+struct FramePackingPicker: View {
+    @Binding public var framePacking: VideoItem.FramePacking
+    public let options: [VideoItem.FramePacking]
+    
+    var body: some View {
+        Picker(selection: $framePacking.animation()) {
+            ForEach(options, id: \.self) { option in
+                Text(option.description).tag(option)
+            }
+        } label: {
+            Text("Frame Packing:")
+        }
+        .pickerStyle(.palette)
+        .controlSize(.large)
+        .frame(maxWidth: CGFloat(300 * options.count))
+        .fixedSize()
+    }
+}
+
 extension VideoItem {
     /// An example VideoItem to illustrate how to load HLS stream videos from the web.
-    @MainActor public static let sampleHLSStream = VideoItem(
+    public static let sampleHLSStream = VideoItem(
         metadata: [
             .commonIdentifierTitle: "Example Stream",
             .commonIdentifierDescription: "Local basketball player takes a shot at sunset",
         ],
         url: URL(string: "https://stream.spatialgen.com/stream/JNVc-sA-_QxdOQNnzlZTc/index.m3u8")!,
-        projection: .equirectangular(fieldOfView: 180.0)
+        projection: .equirectangular(fieldOfView: 180.0),
+        framePacking: .none
     )
 }
 

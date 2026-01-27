@@ -1,30 +1,26 @@
 # OpenImmersive
 ![OpenImmersive logo, representing a pair of red/blue anaglyphic glasses](OpenImmersiveApp/Media/openimmersive-logo.png)
 
-_A free and open source MV-HEVC/AIVU spatial & immersive video player for the Apple Vision Pro._
+_A free and open source spatial & immersive video player for the Apple Vision Pro._
 
 Maintained by [Anthony Maës](https://www.linkedin.com/in/portemantho/) & [Acute Immersive](https://acuteimmersive.com/), derived from [Spatial Player](https://github.com/mikeswanson/SpatialPlayer/) by [Mike Swanson](https://blog.mikeswanson.com/). See the [announcement on Medium](https://medium.com/@portemantho/openimmersive-the-free-and-open-source-immersive-video-player-a37f69556d16)!
 
-The Apple Vision Pro introduced two types of stereoscopic videos: 
-- *Spatial Video*, rectangular and user-created, is supported natively by the Photos App and the rest of the ecosystem.
-- *Immersive Video*, wrapping 180 degrees around the viewer and professionally made, uses the same MV-HEVC encoding as Spatial Video but does not come with a system player, and it is rendered as a rectangular spatial video by `AVPlayerViewController`.
-
-Because of significant interest in filmmakers for Immersive Video (fka. 3D VR180), many developers have built their own players, often derived from Mike's open-source Spatial Player.
+Because of significant interest in filmmakers for Immersive Video in the early days of the Apple Vision Pro, many developers have built their own players, often derived from Mike's open-source Spatial Player.
 
 OpenImmersive aims to provide this community with a more complete player, with playback controls, error handling, media loading from HLS streaming and from the local photo gallery. The project and code are intentionally kept as concise as possible to find the right balance between turnkey readiness and modifiability.
 
 ## Features
 * The xcode project contains **OpenImmersiveApp**, the visionOS app, which depends on **OpenImmersiveLib**, an easy-to-integrate Swift package that lives on its own github repository: [https://github.com/acuteimmersive/openimmersivelib](https://github.com/acuteimmersive/openimmersivelib)
-* **This player only supports immersive and spatial videos in the MV-HEVC & AIVU formats.** Other formats will not display correctly without code modifications.
+* **This player supports immersive and spatial videos in MV-HEVC, AIVU, Side-by-Side and Over-Under formats.**
 * Load a video from various sources: photo gallery, local files/documents, HLS streaming playlist URL, or by dragging a video onto the window.
 * Control playback with Play/Pause buttons, +15/-15 second buttons, and an interactable scrubber in an auto-dismiss control panel.
 * Select resolution/bandwidth and audio track when streaming videos.
-* A timecode readout panel to illustrate injection of custom buttons & views in the ImmersivePlayer.
-* Play in AIVU mode with full spatial audio support!
+* Play AIV with full spatial audio support!
+* Add your custom UI panels to the player like the timecode readout built into the app.
 
 ## Requirements
-* macOS with Xcode 16 or later
-* for on-device testing: visionOS 2.0 or later
+* macOS with Xcode 26 or later
+* for on-device testing: visionOS 26.0 or later
 
 ## Usage
 - Clone the repo
@@ -42,13 +38,13 @@ Or install the app from the [visionOS AppStore](https://apps.apple.com/us/app/op
 - Click Add Package, and use `import OpenImmersive` to use the lib's classes and structs in your app.
 
 ## Contributions
-While this project aims to remain relatively concise and lightweight to allow for modifiability, it needs a few more basic features and better error handling. Contributions are greatly appreciated!
+While this project aims to remain relatively concise and lightweight to allow for modifiability, the community could use improvements and new features. Contributions are greatly appreciated!
 
-## Desired improvements:
+### Desired improvements:
 - Subtitles support
 - Improved Spatial Audio support
-- Online stream format detection, Apple Projected Media Profile support
+- Format auto detection from HLS manifest
 - SharePlay support
-- Improved ControlPanel look and feel
 
 Special thanks to [Zachary Handshoe](https://www.linkedin.com/in/zachary-handshoe/) from [SpatialGen](https://spatialgen.com/) for his contributions.
+Special thanks to [SINTEF](https://www.sintef.no/) and [Gassco](https://gassco.eu/) for supporting development.
