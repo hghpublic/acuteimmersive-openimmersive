@@ -31,7 +31,7 @@ struct SourcesList: View {
             
             let videoTitle = selectedItem.metadata[.commonIdentifierTitle] ?? "<NONE>"
             let fieldOfView = appState.projection == .equirectangular ? " \(appState.fieldOfView)°" : ""
-            let framePacking = appState.projection == .appleImmersive || appState.framePacking == .none ? "" : "(\(appState.framePacking.description))"
+            let framePacking = appState.projection == .appleImmersive || appState.framePacking == .none ? "" : "(\(appState.framePacking.rawValue))"
             
             Text("Selected video: **\(videoTitle)**")
             Text("Format: **\(appState.projection.rawValue)\(fieldOfView)** \(framePacking)")
@@ -106,6 +106,25 @@ struct SourcesList: View {
                         Text(packingDescription)
                             .fixedSize(horizontal: false, vertical: true)
                             .multilineTextAlignment(.center)
+                        
+                        if appState.framePacking != .none {
+                            let stepperWidth: CGFloat = 350
+                            Stepper(value: $appState.baseline, in: 0...10000, step: 5) {
+                                let baseline = Text("Baseline:")
+                                    .font(.headline.lowercaseSmallCaps())
+                                Text("\(baseline) \(appState.baseline, specifier: "%.0f")mm")
+                                    .monospacedDigit()
+                            }
+                            .frame(maxWidth: stepperWidth)
+                            
+                            Stepper(value: $appState.disparity, in: -1...1, step: 0.05) {
+                                let disparity = Text("Horizontal Disparity:")
+                                    .font(.headline.lowercaseSmallCaps())
+                                Text("\(disparity) \(appState.disparity, specifier: "%.2f")")
+                                    .monospacedDigit()
+                            }
+                            .frame(maxWidth: stepperWidth)
+                        }
                     }
                     
                     Divider()
@@ -185,25 +204,15 @@ struct FormatPicker: View {
     }
 }
 
-extension VideoItem.FramePacking {
-    var description: String {
-        switch self {
-        case .none: "Default"
-        case .sideBySide: "Side-by-Side"
-        case .overUnder: "Over-Under"
-        }
-    }
-}
-
 /// A frame packing type picker
 struct FramePackingPicker: View {
-    @Binding public var framePacking: VideoItem.FramePacking
-    public let options: [VideoItem.FramePacking]
+    @Binding public var framePacking: FramePackingOption
+    public let options: [FramePackingOption]
     
     var body: some View {
         Picker(selection: $framePacking.animation()) {
             ForEach(options, id: \.self) { option in
-                Text(option.description).tag(option)
+                Text(option.rawValue).tag(option)
             }
         } label: {
             Text("Frame Packing:")

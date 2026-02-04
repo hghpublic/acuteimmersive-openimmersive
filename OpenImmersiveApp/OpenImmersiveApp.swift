@@ -17,6 +17,15 @@ enum ProjectionOption: String {
     case appleImmersive = "AIVU"
 }
 
+enum FramePackingOption: String {
+    /// The projection to use for VR180/VR360 videos.
+    case none = "Default"
+    /// The projection to use for Spatial videos and other rectangular videos.
+    case sideBySide = "Side-by-Side"
+    /// The projection to use for Apple Immersive videos (AIVU).
+    case overUnder = "Over-Under"
+}
+
 @Observable
 class OpenImmersiveAppState {
     /// The user-selected item.
@@ -28,7 +37,11 @@ class OpenImmersiveAppState {
     /// Whether to force the user-selected field of view even when the MV-HEVC media encodes a field of view.
     var forceFov: Bool = false
     /// The user-selected frame packing type.
-    var framePacking: VideoItem.FramePacking = .none
+    var framePacking: FramePackingOption = .none
+    /// The user-selected baseline in millimeters (used with frame packing).
+    var baseline: Float = 60.0
+    /// The user-selected horizontal disparity in the [-1.0, 1.0] uniform range (used with frame packing).
+    var disparity: Float = 0.0
     /// Whether to show the timecode readout view in the ImmersivePlayer.
     var showTimecodeReadout: Bool = false
     
@@ -37,13 +50,19 @@ class OpenImmersiveAppState {
     ///   - item: the object describing the video.
     func applyFormatOptions(to item: VideoItem) -> VideoItem {
         var item = item
+        switch framePacking {
+        case .none:
+            item.framePacking = .none
+        case .sideBySide:
+            item.framePacking = .sideBySide(baseline: self.baseline, horizontalDisparity: self.disparity)
+        case .overUnder:
+            item.framePacking = .overUnder(baseline: self.baseline, horizontalDisparity: self.disparity)
+        }
         switch projection {
         case .equirectangular:
             item.projection = .equirectangular(fieldOfView: Float(self.fieldOfView), force: self.forceFov)
-            item.framePacking = framePacking
         case .rectilinear:
             item.projection = .rectangular
-            item.framePacking = framePacking
         case .appleImmersive:
             item.projection = .appleImmersive
             item.framePacking = .none
@@ -56,15 +75,25 @@ class OpenImmersiveAppState {
     ///   - item: the object describing the video.
     func applyFormatOptions(from item: VideoItem) {
         if let projection = item.projection {
+            switch item.framePacking {
+            case .none:
+                self.framePacking = .none
+            case .sideBySide(let baseline, let horizontalDisparity):
+                self.framePacking = .sideBySide
+                self.baseline = baseline ?? 60.0
+                self.disparity = horizontalDisparity ?? 0
+            case .overUnder(let baseline, let horizontalDisparity):
+                self.framePacking = .overUnder
+                self.baseline = baseline ?? 60.0
+                self.disparity = horizontalDisparity ?? 0
+            }
             switch projection {
-            case .equirectangular(fieldOfView: let fieldOfView, force: let force):
+            case .equirectangular(let fieldOfView, let force):
                 self.projection = .equirectangular
                 self.fieldOfView = Int(fieldOfView)
                 self.forceFov = force
-                self.framePacking = item.framePacking
             case .rectangular:
                 self.projection = .rectilinear
-                self.framePacking = item.framePacking
             case .appleImmersive:
                 self.projection = .appleImmersive
                 self.framePacking = .none
